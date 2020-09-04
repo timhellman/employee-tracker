@@ -1,7 +1,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const util = require("util");
-require('dotenv/types').config()
+require('dotenv').config()
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -118,23 +118,54 @@ function start(){
             })
          };
          if(firstAnswer.firstQuestion === "Update employee roles"){
-            inquirer.prompt({
-                name: "updateQuestion",
-                type: "list",
-                message: "Which employee needs an updated role?",
-                choices: []
-            
-         }).then(function (answer) {
-                var roleId = answer.roleId;
-                var query = "UPDATE employee SET role_id=? WHERE id=?";
-                connection.query(query, [roleId, id], function (err, res) {
-                  if (err) {
+            const employeeArray = connection.query("SELECT * FROM employee", function(err, res){
+                if (err) {
                     console.log(err);
-                  }
-                  setTimeout(start, 2000);
-                });
+                }console.log(res);
+                var eArray = res.map(item => {
+                    return {
+                        name: item.first_name + item.last_name,
+                        value: item.id
+                    }
+                })
+                inquirer.prompt({
+                    name: "updateQuestion",
+                    type: "list",
+                    message: "Which employee needs an updated role?",
+                    choices: eArray,
+                
+             }).then(function (answer) {
+                const id = answer.updateQuestion;
+                const roleArray = connection.query("SELECT * FROM role", function(err, res){
+                    if (err) {
+                        console.log(err);
+                    }console.log(res);
+                    var rArray = res.map(item => {
+                        return {
+                            name: item.title,
+                            value: item.id
+                        }
+                    })
+                inquirer.prompt({
+                    name: "roleUpdateQuestion",
+                    type: "list",
+                    message: "Which role do you want to give this employee?",
+                    choices: rArray  
+
+                }).then(function(answer){
+                    var roleId = answer.roleUpdateQuestion;
+                    var query = "UPDATE employee SET role_id=? WHERE id=?";
+                    connection.query(query, [roleId, id], function (err, res) {
+                      if (err) {
+                        console.log(err);
+                      }
+                      setTimeout(start, 2000);
+                    });
+                })                          
+               
+             })
+            })})
             
-           
-         })
+            
         }})}
     
